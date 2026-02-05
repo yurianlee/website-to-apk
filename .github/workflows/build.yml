@@ -32,8 +32,16 @@ jobs:
 
       - name: Execute Build
         run: |
+          # 強制統一路徑，讓 Gradle 不再混亂
+          export ANDROID_HOME=$GITHUB_WORKSPACE/cmdline-tools
+          export ANDROID_SDK_ROOT=$GITHUB_WORKSPACE/cmdline-tools
+          
+          # 確保路徑中有工具可以用
+          export PATH=$PATH:$ANDROID_HOME/bin
+          
           # 執行實際編譯
           ./make.sh build
+          
           
       - name: Upload Result
         if: always() # 就算失敗也上傳日誌，方便我們檢查
