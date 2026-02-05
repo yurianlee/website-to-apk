@@ -1,0 +1,27 @@
+name: Build My Chat App
+on:
+  workflow_dispatch: # 讓你可以手動點擊按鈕開始編譯
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          
+      - name: Build APK
+        run: bash ./build.sh # 這裡假設你用的是 Jipok 的專案，他有一個 build.sh
+        env:
+          APP_NAME: "我的聊天室"
+          APP_URL: "http://192.168.0.194:3000" # 記得改這裡！
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: chat-app-apk
+          path: ./*.apk
