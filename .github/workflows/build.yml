@@ -32,14 +32,21 @@ jobs:
 
       - name: Execute Build
         run: |
-          # 強制統一路徑，讓 Gradle 不再混亂
+          # 1. 統一路徑環境變數
           export ANDROID_HOME=$GITHUB_WORKSPACE/cmdline-tools
           export ANDROID_SDK_ROOT=$GITHUB_WORKSPACE/cmdline-tools
+          export PATH=$PATH:$ANDROID_HOME/bin:$ANDROID_HOME/cmdline-tools/bin
           
-          # 確保路徑中有工具可以用
-          export PATH=$PATH:$ANDROID_HOME/bin
+          # 2. 自動同意所有 Android SDK 授權 (關鍵步驟)
+          # 使用 yes 命令將 "y" 傳給 sdkmanager
+          mkdir -p "$ANDROID_HOME/licenses"
+          yes | ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME --licenses || true
           
-          # 執行實際編譯
+          # 3. 預先安裝缺失的組件 (預防萬一)
+          ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME "platforms;android-33" "build-tools;30.0.3"
+          
+          # 4. 執行實際編譯
+          chmod +x make.sh
           ./make.sh build
           
           
