@@ -13,22 +13,34 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Install Python dependencies
+      # 關鍵步驟：幫它的腳本準備好 Android SDK 工具
+      - name: Setup Android SDK
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt || true # 預防萬一沒有這個檔案
-
-      - name: Execute Build Script
-        # 這裡我們略過 keygen，直接用 debug 模式編譯，省去簽署麻煩
+          mkdir -p cmdline-tools
+          # 下載 Android 官方命令列工具
+          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+          unzip cmdline-tools.zip -d cmdline-tools
+          # 腳本預期路徑可能是 cmdline-tools/bin...
+          mv cmdline-tools/cmdline-tools/* cmdline-tools/ 2>/dev/null || true
+          
+      - name: Execute Keygen
         run: |
           chmod +x make.sh
-          ./make.sh build
-        env:
-          # 這裡可以根據該專案的說明文件加入需要的環境變數
-          URL: "http://192.168.x.x:3000" 
+          # 自動化輸入 keygen 資訊，避免腳本卡在詢問介面
+          # 這裡假設 keygen 需要一些輸入，我們用 yes 命令填充
+          yes "" | ./make.sh keygen || true
 
+      - name: Execute Build
+        run: |
+          # 執行實際編譯
+          ./make.sh build
+          
       - name: Upload Result
+        if: always() # 就算失敗也上傳日誌，方便我們檢查
         uses: actions/upload-artifact@v4
         with:
-          name: MyChatApp
-          path: ./**/*.apk
+          name: Build-Output
+          path: |
+            ./*.apk
+            ./out/*.apk
+            ./*.log
