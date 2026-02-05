@@ -15,21 +15,27 @@ jobs:
 
       - name: Execute Build
         run: |
-          # 1. 使用系統內建的 Android SDK 路徑
-          export ANDROID_HOME=$ANDROID_SDK_ROOT
-          export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools
+          # 1. 先清除掉所有可能衝突的環境變數
+          unset ANDROID_HOME
+          unset ANDROID_SDK_ROOT
           
-          # 2. 建立一個假裝的 cmdline-tools 騙過 make.sh
-          # 因為 make.sh 寫死要檢查目前的目錄，我們給它一個軟連結
-          ln -s $ANDROID_HOME ./cmdline-tools
+          # 2. 建立捷徑騙過 make.sh
+          # 這次我們把系統 SDK 直接軟連結到當前目錄
+          ln -s /usr/local/lib/android/sdk ./cmdline-tools
           
-          # 3. 自動同意授權 (使用系統內建的 sdkmanager)
+          # 3. 重新定義唯一路徑 (這點最關鍵：兩個變數必須完全一致)
+          # 指向我們剛才建立的捷徑路徑
+          export ANDROID_HOME=$GITHUB_WORKSPACE/cmdline-tools
+          export ANDROID_SDK_ROOT=$GITHUB_WORKSPACE/cmdline-tools
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+
+          # 4. 同意授權 (使用我們定義的新路徑下的工具)
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
           
-          # 4. 確保有裝好需要的版本
+          # 5. 確保版本正確
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-33" "build-tools;30.0.3"
 
-          # 5. 執行編譯 (keygen 的部分如果沒過，這裡補一下)
+          # 6. 執行編譯
           chmod +x make.sh
           yes "" | ./make.sh keygen || true
           ./make.sh build
