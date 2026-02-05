@@ -87,11 +87,12 @@ jobs:
           
           
       - name: Upload Result
-        if: always() # 就算失敗也上傳日誌，方便我們檢查
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Build-Output
+          # 使用動態名稱，避免 409 Conflict 錯誤
+          name: ChatApp-APK-${{ github.run_number }}
           path: |
-            ./*.apk
-            ./out/*.apk
-            ./*.log
+            **/*.apk
+          # 如果沒找到檔案，不要讓整個 Workflow 顯示失敗
+          if-no-files-found: warn
